@@ -1,4 +1,5 @@
 
+import {useState} from 'react'
 import {format, formatDistanceToNow} from 'date-fns'
 import ptBR from 'date-fns/locale/pt-BR'
 import { Avatar } from './Avatar'
@@ -12,6 +13,13 @@ import styles from './Post.module.css'
 
 export function Post({ author, publishedAt, content }) {
 
+    const [comments, setComments]= useState([
+     'Post muito bacana, hein?'
+    ])
+
+    const [newCommentText, setNewCommentText] = useState('')
+
+
     const publisheDateFromatted = format(publishedAt, "d 'de' LLLL 'às' HH:mm'h'",{
         locale: ptBR,
     })
@@ -21,6 +29,36 @@ export function Post({ author, publishedAt, content }) {
         addSuffix:true
 
     })
+
+    function handleCreateNewComment(){
+        event.preventDefault()        
+        setComments([...comments, newCommentText] )
+        setNewCommentText('')
+      
+
+    }
+    function handleNewCommentChange() {
+        event.target.setCustomValidity('')
+        setNewCommentText(event.target.value)
+    }
+
+    function deleteComment(commentToDelete) {
+        // na imutabilidade => as variaveis não sofrem mutação, nós criamos um novo valor um novo espaço na memoria
+       
+        const commentWithoutDeletedOne = comments.filter(comment => {
+            return comment !== commentToDelete
+        })
+       
+        setComments(commentWithoutDeletedOne)
+
+    }
+
+    function handleNewCommentIvalid(){
+        event.target.setCustomValidity('Este campo é obrigatório')
+    }
+
+    //Desabilita o botão caso não tenha texto escrito na textarea.
+    const isNewCommentEmpty = newCommentText.length === 0
 
     return (
         <article className={styles.post}>
@@ -47,27 +85,47 @@ export function Post({ author, publishedAt, content }) {
             <div className={styles.content}>
         {content.map(line => {
             if(line.type === 'paragraph') {
-                return <p>{line.content}</p>
+                return <p
+                key={line.content}
+                >{line.content}</p>
             }else{
-                return <p><a href='#'>{line.content}</a></p>
+                return <p
+                key={line.content}
+                ><a href='#'>{line.content}</a></p>
             }
         })}
             </div>
 
-            <form className={styles.commentForm}>
+            <form 
+            onSubmit={handleCreateNewComment}
+            className={styles.commentForm}>
                 <strong>Deixe seu feedback</strong>
 
                 <textarea
+                    name='comment'
                     placeholder='Deixe um comentário'
+                    onChange={handleNewCommentChange}
+                    value={newCommentText}
+                    onInvalid={handleNewCommentIvalid}
+                    required
                 />
                 <footer>
-                    <button type='submit'>Publicar</button>
+                    <button 
+                    type='submit'
+                    disabled={isNewCommentEmpty}
+                    >Publicar</button>
                 </footer>
             </form>
+
             <div className={styles.commentList}>
-                <Comment />
-                <Comment />
-                <Comment />
+            {comments.map(comment =>{
+                return (<Comment 
+                onDeleteComment={deleteComment}
+                content={comment}
+                key={comment}
+                />)
+            })}
+                
             </div>
         </article>
     )
